@@ -1,3 +1,4 @@
+local vec2 = require "vec2"
 local planets = require "planets"
 local solver = require "euler"
 
@@ -7,6 +8,7 @@ local distanceScale = 5
 local timeAccum = 0
 
 local userZoom = 1
+local userPos = vec2(0,0)
 
 local pUScale = 100
 function love.load()
@@ -30,6 +32,9 @@ function love.draw()
 	-- Zoom
 	love.graphics.scale(userZoom,userZoom)
 
+	love.graphics.translate(userPos.x, userPos.y)
+
+	love.graphics.setColor(255,255,255)
 	for _,v in pairs(planets.planets) do
 		love.graphics.push()
 		--love.graphics.rotate(timeAccum*3/v.dist)
@@ -37,15 +42,16 @@ function love.draw()
 			love.graphics.circle("fill", 0, 0, planetScale*v.r)
 		love.graphics.pop()
 	end
-
+	love.graphics.setColor(255,255,0)
+	love.graphics.circle("fill",0 ,0, 2*planetScale)
 	love.graphics.pop()
 end
 
 function love.update(dt)
 	timeAccum = timeAccum + dt
 	local i = 0
-	while i < 30 do
-		solver(planets.planets, dt)
+	while i < 2*(1/userZoom) do
+		solver(planets.planets, dt*(1/userZoom/4))
 		i = i + 1
 	end
 end
@@ -64,4 +70,25 @@ end
 
 function love.mousepressed(x,y,btn,touch)
 	print (btn)
+end
+
+function love.touchmoved(id,x,y,dx,dy,pressure)
+	local touches = love.touch.getTouches()
+	if table.getn(touches) == 2 then
+		for _,v in pairs(touches) do
+			if v ~= id then
+				local ox, oy = love.touch.getPosition(v)
+				
+				local p1 = vec2(x-ox, y-oy):normalized()
+				local p2 = vec2(dx,dy):normalized()
+
+				local dot = p1.x*p2.x + p1.y*p2.y
+
+				userZoom = userZoom + userZoom*dot*vec2(dx,dy):len()/100
+				if userZoom < 0.002 then userZoom = 0.002 end
+			end
+		end
+	elseif table.getn(touches) == 1 then
+		userPos = userPos+vec2(dx,dy)*(1/userZoom)
+	end
 end
