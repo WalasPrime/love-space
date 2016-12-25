@@ -11,6 +11,8 @@ local userZoom = 1
 local userPos = vec2(0,0)
 
 local pUScale = 100
+
+local planetShader, planetMesh
 function love.load()
 	print("Starting...")
 	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13)
@@ -22,6 +24,14 @@ function love.load()
 	planets.addPlanet("Uran", pUScale*19.19, 14.53, 4, 2)
 	planets.addPlanet("Neptun", pUScale*30, 17.14, 3.88, 1.3)
 
+	planetShader = require "planet_shader"
+	local normalSphere = love.graphics.newImage('gfx/sphere_normal.jpg')
+	planetShader:send("sphere_normal", normalSphere)
+
+	planetMesh = love.graphics.newMesh({
+		{0,0,0,0}, {0,1,0,1},
+		{1,1,1,1}, {1,0,1,0}
+	})
 end
 
 function love.draw()
@@ -35,13 +45,18 @@ function love.draw()
 	love.graphics.translate(userPos.x, userPos.y)
 
 	love.graphics.setColor(255,255,255)
+	love.graphics.setShader(planetShader)
 	for _,v in pairs(planets.planets) do
 		love.graphics.push()
 		--love.graphics.rotate(timeAccum*3/v.dist)
 			love.graphics.translate(v.pos.x*distanceScale, v.pos.y*distanceScale)
-			love.graphics.circle("fill", 0, 0, planetScale*v.r)
+			--love.graphics.circle("fill", 0, 0, planetScale*v.r)
+			love.graphics.scale(planetScale*v.r*2)
+			planetShader:send("dirToSun", vec2(-v.pos.x, v.pos.y):normalized():table())
+			love.graphics.draw(planetMesh)
 		love.graphics.pop()
 	end
+	love.graphics.setShader()
 	love.graphics.setColor(255,255,0)
 	love.graphics.circle("fill",0 ,0, 2*planetScale)
 	love.graphics.pop()
@@ -51,7 +66,7 @@ function love.update(dt)
 	timeAccum = timeAccum + dt
 	local i = 0
 	while i < 2*(1/userZoom) do
-		solver(planets.planets, dt*(1/userZoom/4))
+		solver(planets.planets, dt*(1/userZoom/10))
 		i = i + 1
 	end
 end
@@ -66,10 +81,25 @@ function love.wheelmoved(x,y)
 	else
 		userZoom = userZoom / 2
 	end
+	if userZoom < 0.02 then userZoom = 0.02 end
 end
 
+
+local mouseDrag = false
 function love.mousepressed(x,y,btn,touch)
-	print (btn)
+	if btn == 2 and not touch then
+		mouseDrag = true
+	end
+end
+function love.mousereleased(x,y,btn,touch)
+	if btn == 2 and not touch then
+		mouseDrag = false
+	end
+end
+function love.mousemoved(x,y,dx,dy,touch)
+	if mouseDrag then
+		userPos = userPos+vec2(dx,dy)*(1/userZoom)
+	end
 end
 
 function love.touchmoved(id,x,y,dx,dy,pressure)
@@ -85,7 +115,7 @@ function love.touchmoved(id,x,y,dx,dy,pressure)
 				local dot = p1.x*p2.x + p1.y*p2.y
 
 				userZoom = userZoom + userZoom*dot*vec2(dx,dy):len()/100
-				if userZoom < 0.002 then userZoom = 0.002 end
+				if userZoom < 0.02 then userZoom = 0.02 end
 			end
 		end
 	elseif table.getn(touches) == 1 then
