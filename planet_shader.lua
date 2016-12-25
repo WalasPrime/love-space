@@ -13,7 +13,7 @@ return love.graphics.newShader([[
 		vec2 center = vec2(0.5,0.5);
 		vec2 toc = tex_co-center;
 		if(toc.x*toc.x + toc.y*toc.y <= 0.25){
-			return d*vec4(255,255,255,1);
+			return d*vec4(1,1,1,0)+vec4(0,0,0,1);
 		}else{
 			return vec4(0,0,0,0);
 		}

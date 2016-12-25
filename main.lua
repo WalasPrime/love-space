@@ -12,7 +12,7 @@ local userPos = vec2(0,0)
 
 local pUScale = 100
 
-local planetShader, planetMesh
+local planetShader, planetMesh, nebulaBg
 function love.load()
 	print("Starting...")
 	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13)
@@ -32,6 +32,8 @@ function love.load()
 		{0,0,0,0}, {0,1,0,1},
 		{1,1,1,1}, {1,0,1,0}
 	})
+
+	nebulaBg = love.graphics.newImage('gfx/nebula-bg.jpg')
 end
 
 function love.draw()
@@ -39,9 +41,14 @@ function love.draw()
 	love.graphics.push()
 	love.graphics.translate(w/2,h/2)
 
+	love.graphics.push()
+		love.graphics.scale(1+userZoom/30, 1+userZoom/30)
+		love.graphics.translate(userPos.x/200, userPos.y/200)
+		love.graphics.draw(nebulaBg, -nebulaBg:getWidth()/2, -nebulaBg:getHeight()/2)
+	love.graphics.pop()
+
 	-- Zoom
 	love.graphics.scale(userZoom,userZoom)
-
 	love.graphics.translate(userPos.x, userPos.y)
 
 	love.graphics.setColor(255,255,255)
