@@ -17,7 +17,7 @@ return love.graphics.newShader([[
 		if(toc.x*toc.x + toc.y*toc.y <= 0.25){
 			return d*vec4(1,1,1,0)+vec4(0,0,0,1);
 		}else{
-			return vec4(0,0,0,0);
+			return vec4(1,0,0,0);
 		}
 	}
 ]])

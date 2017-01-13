@@ -12,7 +12,7 @@ local userPos = vec2(0,0)
 
 local pUScale = 100
 
-local planetShader, planetMesh, nebulaBg
+local planetShader, planetMesh, nebulaBg, sunFlare
 function love.load()
 	print("Starting...")
 	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13)
@@ -34,8 +34,34 @@ function love.load()
 	})
 
 	nebulaBg = love.graphics.newImage('gfx/nebula-bg.jpg')
+	sunFlare = love.graphics.newImage('gfx/flare.jpg')
 end
 
+local bgStars = {}
+function mageBgStar(bounds)
+	local pos = {x=0,y=0,zmult=love.math.randomNormal(1,0)*1}
+	local dice = love.math.random(1,4)
+	-- x
+	if dice % 2 == 0 then
+		pos.x = love.math.random(bounds[1], bounds[3])
+		if dice == 2 then
+			pos.y = bounds[2]
+		else
+			pos.y = bounds[4]
+		end
+	else
+		pos.y = love.math.random(bounds[2], bounds[4])
+		if dice == 1 then
+			pos.x = bounds[1]
+		else
+			pos.x = bounds[3]
+		end
+	end
+	table.insert(bgStars, {x = pos.x, y = pos.y, zmult = pos.zmult})
+end
+function initBgStar(bounds)
+	table.insert(bgStars, {x = love.math.random(bounds[1], bounds[3]), y = love.math.random(bounds[2], bounds[4]), zmult = love.math.randomNormal(1,0)*1})
+end
 function love.draw()
 	w,h = love.graphics.getDimensions()
 	love.graphics.push()
@@ -44,6 +70,7 @@ function love.draw()
 	love.graphics.push()
 		love.graphics.scale(1+userZoom/30, 1+userZoom/30)
 		love.graphics.translate(userPos.x/200, userPos.y/200)
+		love.graphics.setColor(255,255,255,math.min(120,100/(userZoom/1)))
 		love.graphics.draw(nebulaBg, -nebulaBg:getWidth()/2, -nebulaBg:getHeight()/2)
 	love.graphics.pop()
 
@@ -63,18 +90,65 @@ function love.draw()
 			love.graphics.draw(planetMesh)
 		love.graphics.pop()
 	end
+
 	love.graphics.setShader()
-	love.graphics.setColor(255,255,0)
-	love.graphics.circle("fill",0 ,0, 2*planetScale)
+
+	-- bgStars
+	love.graphics.setPointSize(2)
+	for _,v in pairs(bgStars) do
+		love.graphics.push()
+			love.graphics.translate(v.x+(userPos.x-v.x)*v.zmult, v.y+(userPos.y-v.y)*v.zmult)
+			local shade = 125+(v.zmult)*50
+			love.graphics.setColor(shade,shade,shade,127/(userZoom/2))
+			love.graphics.points({0,0})
+			--love.graphics.circle("fill",0,0,10)
+		love.graphics.pop()
+	end
+
+	love.graphics.setBlendMode("add")
+	love.graphics.push()
+		love.graphics.setColor(100,100,255)
+		love.graphics.circle("fill",0 ,0, planetScale)
+		love.graphics.setColor(255,255,255)
+		love.graphics.scale(1/userZoom,1/userZoom)
+		local mag = math.max(userZoom/2,1)
+		love.graphics.scale(mag,mag)
+		love.graphics.draw(sunFlare,-sunFlare:getWidth()/2,-sunFlare:getHeight()/2+29)
+	love.graphics.setBlendMode("alpha")
+	love.graphics.pop()
+
 	love.graphics.pop()
 end
 
+function getDefaultBounds()
+	local w,h = love.graphics.getDimensions()
+	local realZoom = userZoom
+	local bounds = {-userPos.x-w/2/realZoom, -userPos.y-h/2/realZoom, -userPos.x+w/2/realZoom, -userPos.y+h/2/realZoom}
+	return bounds
+end
 function love.update(dt)
 	timeAccum = timeAccum + dt
 	local i = 0
 	while i < 2*(1/userZoom) do
 		solver(planets.planets, dt*(1/userZoom/10))
 		i = i + 1
+	end
+
+	-- bgStars
+	local removalBound = 10/userZoom
+	local bounds = getDefaultBounds()
+	for k,v in pairs(bgStars) do
+		if v.x < bounds[1]-removalBound or v.x > bounds[3]+removalBound or v.y < bounds[2]-removalBound or v.y > bounds[4]+removalBound then
+			table.remove(bgStars, k)
+		end
+	end
+	if #bgStars == 0 then
+		for i=0,100 do
+			initBgStar(bounds)
+		end
+	end
+	for i=#bgStars,100 do
+		mageBgStar(bounds)
 	end
 end
 
@@ -83,12 +157,14 @@ function love.keypressed(key,rep)
 end
 
 function love.wheelmoved(x,y)
+	local oldZoom = userZoom 
 	if y > 0 then
 		userZoom = userZoom * 2
 	else
 		userZoom = userZoom / 2
 	end
 	if userZoom < 0.02 then userZoom = 0.02 end
+	if userZoom ~= oldZoom then bgStars = {} end
 end
 
 
@@ -122,6 +198,7 @@ function love.touchmoved(id,x,y,dx,dy,pressure)
 				local dot = p1.x*p2.x + p1.y*p2.y
 
 				userZoom = userZoom + userZoom*dot*vec2(dx,dy):len()/100
+				table.remove(bgStars, 1)
 				if userZoom < 0.02 then userZoom = 0.02 end
 			end
 		end
