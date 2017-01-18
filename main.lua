@@ -15,14 +15,14 @@ local pUScale = 100
 local planetShader, planetMesh, nebulaBg, sunFlare
 function love.load()
 	print("Starting...")
-	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13)
-	planets.addPlanet("Wenus", pUScale*0.72, 0.81, 0.94, 10)
-	planets.addPlanet("Ziemia", pUScale*1, 1, 1, 8)
-	planets.addPlanet("Mars", pUScale*1.52, 0.1, 0.53, 7)
-	planets.addPlanet("Jowisz", pUScale*5.2, 317.8, 11.2, 4)
-	planets.addPlanet("Saturn", pUScale*9.53, 95.16, 9.44, 3)
-	planets.addPlanet("Uran", pUScale*19.19, 14.53, 4, 2)
-	planets.addPlanet("Neptun", pUScale*30, 17.14, 3.88, 1.3)
+	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13, love.graphics.newImage('gfx/0010_23.jpg'))
+	planets.addPlanet("Wenus", pUScale*0.72, 0.81, 0.94, 10, love.graphics.newImage('gfx/8.png'))
+	planets.addPlanet("Ziemia", pUScale*1, 1, 1, 8, love.graphics.newImage('gfx/289884_900.jpg'))
+	planets.addPlanet("Mars", pUScale*1.52, 0.1, 0.53, 7, love.graphics.newImage('gfx/nettuno,-pianeta-187078.jpg'))
+	planets.addPlanet("Jowisz", pUScale*5.2, 317.8, 11.2, 4, love.graphics.newImage('gfx/GasGiant-Ca04.png'))
+	planets.addPlanet("Saturn", pUScale*9.53, 95.16, 9.44, 3, love.graphics.newImage('gfx/edu_what_is_mars.jpg'))
+	planets.addPlanet("Uran", pUScale*19.19, 14.53, 4, 2, love.graphics.newImage('gfx/Planet-Venus-3D-Screensaver.jpg'))
+	planets.addPlanet("Neptun", pUScale*30, 17.14, 3.88, 1.3, love.graphics.newImage('gfx/Glacial-0005.png'))
 
 	planetShader = require "planet_shader"
 	local normalSphere = love.graphics.newImage('gfx/sphere_normal.jpg')
@@ -64,6 +64,10 @@ function initBgStar(bounds)
 end
 function love.draw()
 	w,h = love.graphics.getDimensions()
+
+	--love.graphics.setColor(255,255,255)
+	--love.graphics.rectangle("fill",0,0,w,h)
+
 	love.graphics.push()
 	love.graphics.translate(w/2,h/2)
 
@@ -87,6 +91,7 @@ function love.draw()
 			--love.graphics.circle("fill", 0, 0, planetScale*v.r)
 			love.graphics.scale(planetScale*v.r*2)
 			planetShader:send("dirToSun", vec2(-v.pos.x, v.pos.y):normalized():table())
+			if v.img then planetShader:send("sphere_texture", v.img) end
 			love.graphics.draw(planetMesh)
 		love.graphics.pop()
 	end

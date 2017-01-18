@@ -9,8 +9,8 @@ function stableOrbitVel(M, dist)
 	return math.sqrt(M/dist)
 end
 
-function planets.addPlanet(name_, sun_distance_, mass_, size_, hvel_)
-	table.insert(planets.planets, {static = false, name = name_, dist = sun_distance_, m = mass_, pos = vec2(sun_distance_,0), r = size_, vel = vec2(0, hvel_)})
+function planets.addPlanet(name_, sun_distance_, mass_, size_, hvel_, img_)
+	table.insert(planets.planets, {static = false, name = name_, img = img_, dist = sun_distance_, m = mass_, pos = vec2(sun_distance_,0), r = size_, vel = vec2(0, hvel_)})
 end
 
 function planets.makeSun(planetName)
