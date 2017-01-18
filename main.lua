@@ -12,15 +12,15 @@ local userPos = vec2(0,0)
 
 local pUScale = 100
 
-local planetShader, planetMesh, nebulaBg, sunFlare
+local planetShader, planetMesh, nebulaBg, sunFlare, chroma
 function love.load()
 	print("Starting...")
-	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13, love.graphics.newImage('gfx/0010_23.jpg'))
+	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13, love.graphics.newImage('gfx/edu_what_is_mars.jpg'))
 	planets.addPlanet("Wenus", pUScale*0.72, 0.81, 0.94, 10, love.graphics.newImage('gfx/8.png'))
 	planets.addPlanet("Ziemia", pUScale*1, 1, 1, 8, love.graphics.newImage('gfx/289884_900.jpg'))
 	planets.addPlanet("Mars", pUScale*1.52, 0.1, 0.53, 7, love.graphics.newImage('gfx/nettuno,-pianeta-187078.jpg'))
 	planets.addPlanet("Jowisz", pUScale*5.2, 317.8, 11.2, 4, love.graphics.newImage('gfx/GasGiant-Ca04.png'))
-	planets.addPlanet("Saturn", pUScale*9.53, 95.16, 9.44, 3, love.graphics.newImage('gfx/edu_what_is_mars.jpg'))
+	planets.addPlanet("Saturn", pUScale*9.53, 95.16, 9.44, 3, love.graphics.newImage('gfx/0010_23.jpg'))
 	planets.addPlanet("Uran", pUScale*19.19, 14.53, 4, 2, love.graphics.newImage('gfx/Planet-Venus-3D-Screensaver.jpg'))
 	planets.addPlanet("Neptun", pUScale*30, 17.14, 3.88, 1.3, love.graphics.newImage('gfx/Glacial-0005.png'))
 
@@ -35,6 +35,7 @@ function love.load()
 
 	nebulaBg = love.graphics.newImage('gfx/nebula-bg.jpg')
 	sunFlare = love.graphics.newImage('gfx/flare.jpg')
+	chroma = love.graphics.newImage('gfx/lens_chroma.png')
 end
 
 local bgStars = {}
@@ -110,6 +111,7 @@ function love.draw()
 		love.graphics.pop()
 	end
 
+	-- Star
 	love.graphics.setBlendMode("add")
 	love.graphics.push()
 		love.graphics.setColor(100,100,255)
@@ -119,8 +121,22 @@ function love.draw()
 		local mag = math.max(userZoom/2,1)
 		love.graphics.scale(mag,mag)
 		love.graphics.draw(sunFlare,-sunFlare:getWidth()/2,-sunFlare:getHeight()/2+29)
-	love.graphics.setBlendMode("alpha")
 	love.graphics.pop()
+
+	-- Star lens flare
+	-- (only if Star is within the screenspace)
+	local camPos = vec2(userPos.x*userZoom, userPos.y*userZoom)
+	if math.abs(camPos.x) < w/2 and math.abs(camPos.y) < h/2 then
+		love.graphics.push()
+			love.graphics.scale(1/userZoom, 1/userZoom)
+			love.graphics.translate(-camPos.x*2, -camPos.y*2)
+			local angle = camPos:angleTo(vec2(0,1))
+			love.graphics.rotate(angle)
+			love.graphics.setColor(255,255,255,127*(1-camPos:dist(vec2(0,0))/(w*userZoom/2)))
+			love.graphics.draw(chroma, -chroma:getWidth()/2, -chroma:getHeight()/2)
+		love.graphics.pop()
+	end
+	love.graphics.setBlendMode("alpha")
 
 	love.graphics.pop()
 end
