@@ -12,7 +12,7 @@ local userPos = vec2(0,0)
 
 local pUScale = 100
 
-local planetShader, planetMesh, nebulaBg, sunFlare, chroma
+local planetShader, planetMesh, nebulaBg, sunFlare, chroma, lensFlare
 function love.load()
 	print("Starting...")
 	planets.addPlanet("Merkury", pUScale*0.38, 0.05, 0.38, 13, love.graphics.newImage('gfx/edu_what_is_mars.jpg'))
@@ -36,6 +36,20 @@ function love.load()
 	nebulaBg = love.graphics.newImage('gfx/nebula-bg.jpg')
 	sunFlare = love.graphics.newImage('gfx/flare.jpg')
 	chroma = love.graphics.newImage('gfx/lens_chroma.png')
+	lensFlare = love.graphics.newImage('gfx/lensflare.png')
+
+	makeLensFlares()
+end
+
+local lensFlares = {}
+function makeLensFlares()
+	local amp = 2
+	local num = 10
+	for i=1,num do
+		local distMult = ((2*i-num/2) + love.math.randomNormal(1,0))/num
+		local clr = {125+love.math.random(0,125), 125+love.math.random(0,125), 200+love.math.random(0,55)}
+		table.insert(lensFlares, {mul = distMult, lmul = love.math.random()*0.7, size = love.math.randomNormal(1,0), color = clr})
+	end
 end
 
 local bgStars = {}
@@ -123,17 +137,30 @@ function love.draw()
 		love.graphics.draw(sunFlare,-sunFlare:getWidth()/2,-sunFlare:getHeight()/2+29)
 	love.graphics.pop()
 
-	-- Star lens flare
+	-- Star and lens flare
 	-- (only if Star is within the screenspace)
 	local camPos = vec2(userPos.x*userZoom, userPos.y*userZoom)
 	if math.abs(camPos.x) < w/2 and math.abs(camPos.y) < h/2 then
+		local LIGHT = (1-camPos:dist(vec2(0,0))*userZoom/(userZoom*w/2))
 		love.graphics.push()
 			love.graphics.scale(1/userZoom, 1/userZoom)
 			love.graphics.translate(-camPos.x*2, -camPos.y*2)
 			local angle = camPos:angleTo(vec2(0,1))
 			love.graphics.rotate(angle)
-			love.graphics.setColor(255,255,255,127*(1-camPos:dist(vec2(0,0))/(w*userZoom/2)))
+			love.graphics.setColor(255,255,255,127*LIGHT)
 			love.graphics.draw(chroma, -chroma:getWidth()/2, -chroma:getHeight()/2)
+		love.graphics.pop()
+
+		love.graphics.push()
+			love.graphics.scale(1/userZoom, 1/userZoom)
+			for _,v in pairs(lensFlares) do
+				love.graphics.push()
+					love.graphics.translate(-camPos.x*2*v.mul, -camPos.y*2*v.mul)
+					love.graphics.scale(v.size, v.size)
+					love.graphics.setColor(v.color[1],v.color[2],v.color[3],127*v.lmul*LIGHT)
+					love.graphics.draw(lensFlare, -lensFlare:getWidth()/2, -lensFlare:getHeight()/2)
+				love.graphics.pop()
+			end
 		love.graphics.pop()
 	end
 	love.graphics.setBlendMode("alpha")
